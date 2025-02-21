@@ -26,15 +26,34 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const jobsPerPage = 6;
 
+  // Extract salary information from job data
+  const extractSalaryInfo = (job) => {
+    if (job.compensation && job.compensation.summaryComponents) {
+      const salaryComponent = job.compensation.summaryComponents.find(
+        comp => comp.compensationType === 'Salary'
+      );
+      return {
+        minValue: salaryComponent?.minValue || 0,
+        maxValue: salaryComponent?.maxValue || 0,
+        currencyCode: salaryComponent?.currencyCode || 'USD'
+      };
+    }
+    return null;
+  };
+
   const fetchJobs = useCallback(async () => {
     try {
       const response = await fetch('/api/jobs');
       const data = await response.json();
 
       if (response.ok) {
-        const fetchedJobs = Array.isArray(data.jobs) ? data.jobs : [];
-        setJobs(fetchedJobs);
-        
+        // Enhance job data with additional properties
+        let fetchedJobs = Array.isArray(data.jobs) ? data.jobs.map(job => ({
+          ...job,
+          salaryInfo: extractSalaryInfo(job),
+          company: job.company || 'OpenAI' // Default company name if not provided
+        })) : [];
+
         // Prepare filter options
         const uniqueLocations = [...new Set(fetchedJobs.map(job => job.location))];
         const uniqueDepartments = [...new Set(fetchedJobs.map(job => job.department))];
@@ -59,6 +78,7 @@ export default function Home() {
           salaryRanges: salaryRanges
         });
 
+        setJobs(fetchedJobs);
         setVisibleJobs(fetchedJobs.slice(0, jobsPerPage));
       } else {
         throw new Error(data.error || 'Failed to fetch jobs');
@@ -73,6 +93,7 @@ export default function Home() {
     fetchJobs();
   }, [fetchJobs]);
 
+  // Filtering logic
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {
       const matchesSearch = searchTerm === '' || 
@@ -98,11 +119,10 @@ export default function Home() {
         (selectedFilters.remoteStatus.includes('On-site') && !job.isRemote);
 
       const matchesSalaryRange = selectedFilters.salaryRanges.length === 0 || 
-        selectedFilters.salaryRanges.some(range => 
-          job.compensation && 
-          job.compensation.minValue >= range.min && 
-          job.compensation.maxValue <= range.max
-        );
+        (job.salaryInfo && selectedFilters.salaryRanges.some(range => 
+          job.salaryInfo.minValue >= range.min && 
+          job.salaryInfo.maxValue <= range.max
+        ));
 
       return matchesSearch && 
              matchesLocations && 
@@ -114,6 +134,7 @@ export default function Home() {
     });
   }, [jobs, searchTerm, selectedFilters]);
 
+  // Handle filter changes
   const handleFilterChange = (filterType, value) => {
     setSelectedFilters(prev => {
       const currentFilters = prev[filterType];
@@ -128,6 +149,7 @@ export default function Home() {
     });
   };
 
+  // Reset all filters
   const resetFilters = () => {
     setSelectedFilters({
       locations: [],
@@ -140,16 +162,20 @@ export default function Home() {
     setSearchTerm('');
   };
 
+  // Format salary range for display
+  const formatSalaryRange = (job) => {
+    if (!job.salaryInfo || job.salaryInfo.minValue === 0 || job.salaryInfo.maxValue === 0) {
+      return 'Salary not disclosed';
+    }
+    return `$${job.salaryInfo.minValue.toLocaleString()} - $${job.salaryInfo.maxValue.toLocaleString()} ${job.salaryInfo.currencyCode}`;
+  };
+
+  // Fix apply URL
   const fixApplyUrl = (url) => {
     return url.replace(/\/application$/, '');
   };
 
-  // Format salary range
-  const formatSalaryRange = (compensation) => {
-    if (!compensation || !compensation.minValue || !compensation.maxValue) return 'Salary not disclosed';
-    return `$${compensation.minValue.toLocaleString()} - $${compensation.maxValue.toLocaleString()}`;
-  };
-
+  // Error handling
   if (error) {
     return (
       <div className={styles.container}>
@@ -169,6 +195,7 @@ export default function Home() {
         {/* Sidebar Filters */}
         <aside className={styles.filterSidebar}>
           <div className={styles.filterScrollContainer}>
+            {/* Locations Filter */}
             <div className={styles.filterSection}>
               <h3>Locations</h3>
               {filters.locations.map(location => (
@@ -183,6 +210,7 @@ export default function Home() {
               ))}
             </div>
 
+            {/* Companies Filter */}
             <div className={styles.filterSection}>
               <h3>Companies</h3>
               {filters.companies.map(company => (
@@ -197,6 +225,7 @@ export default function Home() {
               ))}
             </div>
 
+            {/* Departments Filter */}
             <div className={styles.filterSection}>
               <h3>Departments</h3>
               {filters.departments.map(department => (
@@ -211,6 +240,7 @@ export default function Home() {
               ))}
             </div>
 
+            {/* Employment Type Filter */}
             <div className={styles.filterSection}>
               <h3>Employment Type</h3>
               {filters.employmentTypes.map(type => (
@@ -225,6 +255,7 @@ export default function Home() {
               ))}
             </div>
 
+            {/* Remote Status Filter */}
             <div className={styles.filterSection}>
               <h3>Work Type</h3>
               {filters.remoteStatus.map(status => (
@@ -239,6 +270,7 @@ export default function Home() {
               ))}
             </div>
 
+            {/* Salary Range Filter */}
             <div className={styles.filterSection}>
               <h3>Salary Range</h3>
               {filters.salaryRanges.map(range => (
@@ -253,6 +285,7 @@ export default function Home() {
               ))}
             </div>
 
+            {/* Reset Filters Button */}
             <button 
               className={styles.resetFiltersButton}
               onClick={resetFilters}
@@ -302,9 +335,9 @@ export default function Home() {
                       {job.isRemote ? '🌐 Remote' : '🏠 On-site'}
                     </p>
                   )}
-                  {job.compensation && (
+                  {job.salaryInfo && (
                     <p className={styles.jobSalary}>
-                      💰 {formatSalaryRange(job.compensation)}
+                      💰 {formatSalaryRange(job)}
                     </p>
                   )}
                 </div>
