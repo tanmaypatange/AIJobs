@@ -1,7 +1,6 @@
 {
-  "name": "openai-jobs",
+  "name": "ai-jobs",
   "version": "1.0.0",
-  "description": "OpenAI Job Listings App",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
