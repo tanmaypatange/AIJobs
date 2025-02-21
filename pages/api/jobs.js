@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   try {
     const response = await fetch(
-      'https://api.ashbyhq.com/posting-api/job-board/openai?includeCompensation=false',
+      'https://api.ashbyhq.com/posting-api/job-board/openai?includeCompensation=true',
       {
         method: 'GET',
         headers: {
