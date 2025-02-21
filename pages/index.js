@@ -5,19 +5,10 @@ import styles from '../styles/Jobs.module.css';
 export default function Home() {
   const [jobs, setJobs] = useState([]);
   const [visibleJobs, setVisibleJobs] = useState([]);
-  const [theme, setTheme] = useState('light');
+  const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const jobsPerPage = 6;
-
-  // Theme toggle effect
-  useEffect(() => {
-    document.body.classList.toggle(styles.darkTheme, theme === 'dark');
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -55,34 +46,50 @@ export default function Home() {
     setPage(nextPage);
   };
 
+  const handleSearchChange = (e) => {
+    const term = e.target.value.toLowerCase();
+    setSearchTerm(term);
+
+    // Filter jobs based on search term
+    const filteredJobs = jobs.filter(job => 
+      job.title.toLowerCase().includes(term) ||
+      job.location.toLowerCase().includes(term) ||
+      job.department.toLowerCase().includes(term)
+    );
+
+    setVisibleJobs(filteredJobs.slice(0, jobsPerPage));
+  };
+
   const fixApplyUrl = (url) => {
     return url.replace(/\/application$/, '');
   };
 
   if (error) {
     return (
-      <div className={`${styles.container} ${styles.root}`}>
+      <div className={styles.container}>
         <p>Error: {error}</p>
       </div>
     );
   }
 
   return (
-    <div className={`${styles.container} ${styles.root}`}>
+    <div className={styles.container}>
       <Head>
         <title>AI Job Opportunities</title>
         <meta name="description" content="Discover Exciting AI Jobs" />
       </Head>
 
-      <button 
-        className={styles.themeToggle} 
-        onClick={toggleTheme}
-      >
-        {theme === 'light' ? '🌙' : '☀️'}
-      </button>
-
       <header className={styles.header}>
         <h1>AI Job Opportunities</h1>
+        <div className={styles.searchContainer}>
+          <input 
+            type="text" 
+            placeholder="Search jobs by title, location, or department" 
+            className={styles.searchInput}
+            value={searchTerm}
+            onChange={handleSearchChange}
+          />
+        </div>
       </header>
 
       <main className={styles.jobGrid}>
@@ -113,7 +120,7 @@ export default function Home() {
         ))}
       </main>
 
-      {visibleJobs.length < jobs.length && (
+      {visibleJobs.length < jobs.length && searchTerm === '' && (
         <div className={styles.loadMoreContainer}>
           <button 
             onClick={loadMoreJobs}
