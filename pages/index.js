@@ -26,74 +26,88 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const jobsPerPage = 6;
 
-  // Extract salary information from job data
-  const extractSalaryInfo = (job) => {
-    if (job.compensation && job.compensation.summaryComponents) {
-      const salaryComponent = job.compensation.summaryComponents.find(
-        comp => comp.compensationType === 'Salary'
-      );
-      return {
-        minValue: salaryComponent?.minValue || 0,
-        maxValue: salaryComponent?.maxValue || 0,
-        currencyCode: salaryComponent?.currencyCode || 'USD'
-      };
+  // Salary information extraction
+  const extractSalaryInfo = useCallback((job) => {
+    try {
+      if (job.compensation && job.compensation.summaryComponents) {
+        const salaryComponent = job.compensation.summaryComponents.find(
+          comp => comp.compensationType === 'Salary'
+        );
+        return {
+          minValue: salaryComponent?.minValue || 0,
+          maxValue: salaryComponent?.maxValue || 0,
+          currencyCode: salaryComponent?.currencyCode || 'USD'
+        };
+      }
+    } catch (error) {
+      console.error('Salary extraction error:', error);
     }
     return null;
-  };
+  }, []);
 
+  // Fetch jobs with comprehensive error handling
   const fetchJobs = useCallback(async () => {
     try {
       const response = await fetch('/api/jobs');
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
       const data = await response.json();
 
-      if (response.ok) {
-        // Enhance job data with additional properties
-        let fetchedJobs = Array.isArray(data.jobs) ? data.jobs.map(job => ({
-          ...job,
-          salaryInfo: extractSalaryInfo(job),
-          company: job.company || 'OpenAI' // Default company name if not provided
-        })) : [];
-
-        // Prepare filter options
-        const uniqueLocations = [...new Set(fetchedJobs.map(job => job.location))];
-        const uniqueDepartments = [...new Set(fetchedJobs.map(job => job.department))];
-        const uniqueCompanies = [...new Set(fetchedJobs.map(job => job.company))];
-        const uniqueEmploymentTypes = [...new Set(fetchedJobs.map(job => job.employmentType))];
-        const remoteOptions = [...new Set(fetchedJobs.map(job => job.isRemote ? 'Remote' : 'On-site'))];
-        
-        // Prepare salary ranges
-        const salaryRanges = [
-          { label: 'Under $50K', min: 0, max: 50000 },
-          { label: '$50K - $100K', min: 50000, max: 100000 },
-          { label: '$100K - $150K', min: 100000, max: 150000 },
-          { label: 'Over $150K', min: 150000, max: Infinity }
-        ];
-
-        setFilters({
-          locations: uniqueLocations,
-          departments: uniqueDepartments,
-          companies: uniqueCompanies,
-          employmentTypes: uniqueEmploymentTypes,
-          remoteStatus: remoteOptions,
-          salaryRanges: salaryRanges
-        });
-
-        setJobs(fetchedJobs);
-        setVisibleJobs(fetchedJobs.slice(0, jobsPerPage));
-      } else {
-        throw new Error(data.error || 'Failed to fetch jobs');
+      if (!data || !Array.isArray(data.jobs)) {
+        throw new Error('Invalid job data received');
       }
+
+      // Enhance job data
+      const enhancedJobs = data.jobs.map(job => ({
+        ...job,
+        salaryInfo: extractSalaryInfo(job),
+        company: job.company || 'OpenAI',
+        location: job.location || 'Location Not Specified',
+        department: job.department || 'Department Not Specified'
+      }));
+
+      // Prepare filter options
+      const uniqueLocations = [...new Set(enhancedJobs.map(job => job.location))];
+      const uniqueDepartments = [...new Set(enhancedJobs.map(job => job.department))];
+      const uniqueCompanies = [...new Set(enhancedJobs.map(job => job.company))];
+      const uniqueEmploymentTypes = [...new Set(enhancedJobs.map(job => job.employmentType || 'Not Specified'))];
+      const remoteOptions = [...new Set(enhancedJobs.map(job => job.isRemote ? 'Remote' : 'On-site'))];
+      
+      // Salary ranges
+      const salaryRanges = [
+        { label: 'Under $50K', min: 0, max: 50000 },
+        { label: '$50K - $100K', min: 50000, max: 100000 },
+        { label: '$100K - $150K', min: 100000, max: 150000 },
+        { label: 'Over $150K', min: 150000, max: Infinity }
+      ];
+
+      setFilters({
+        locations: uniqueLocations,
+        departments: uniqueDepartments,
+        companies: uniqueCompanies,
+        employmentTypes: uniqueEmploymentTypes,
+        remoteStatus: remoteOptions,
+        salaryRanges: salaryRanges
+      });
+
+      setJobs(enhancedJobs);
+      setVisibleJobs(enhancedJobs.slice(0, jobsPerPage));
     } catch (err) {
-      console.error('Fetching jobs failed:', err);
+      console.error('Comprehensive job fetching error:', err);
       setError(err.message);
     }
-  }, []);
+  }, [extractSalaryInfo]);
 
+  // Initial job fetch
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs]);
 
-  // Filtering logic
+  // Comprehensive filtering logic
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {
       const matchesSearch = searchTerm === '' || 
@@ -134,35 +148,22 @@ export default function Home() {
     });
   }, [jobs, searchTerm, selectedFilters]);
 
-  // Handle filter changes
-  const handleFilterChange = (filterType, value) => {
-    setSelectedFilters(prev => {
-      const currentFilters = prev[filterType];
-      const newFilters = currentFilters.includes(value)
-        ? currentFilters.filter(f => f !== value)
-        : [...currentFilters, value];
-      
-      return {
-        ...prev,
-        [filterType]: newFilters
-      };
-    });
+  // Load more jobs
+  const loadMoreJobs = () => {
+    const nextPage = page + 1;
+    const startIndex = nextPage * jobsPerPage;
+    const endIndex = startIndex + jobsPerPage;
+    
+    const newVisibleJobs = [
+      ...visibleJobs, 
+      ...filteredJobs.slice(startIndex, endIndex)
+    ];
+    
+    setVisibleJobs(newVisibleJobs);
+    setPage(nextPage);
   };
 
-  // Reset all filters
-  const resetFilters = () => {
-    setSelectedFilters({
-      locations: [],
-      departments: [],
-      companies: [],
-      employmentTypes: [],
-      remoteStatus: [],
-      salaryRanges: []
-    });
-    setSearchTerm('');
-  };
-
-  // Format salary range for display
+  // Salary formatting
   const formatSalaryRange = (job) => {
     if (!job.salaryInfo || job.salaryInfo.minValue === 0 || job.salaryInfo.maxValue === 0) {
       return 'Salary not disclosed';
@@ -170,20 +171,17 @@ export default function Home() {
     return `$${job.salaryInfo.minValue.toLocaleString()} - $${job.salaryInfo.maxValue.toLocaleString()} ${job.salaryInfo.currencyCode}`;
   };
 
-  // Fix apply URL
-  const fixApplyUrl = (url) => {
-    return url.replace(/\/application$/, '');
-  };
-
-  // Error handling
+  // Error rendering
   if (error) {
     return (
       <div className={styles.container}>
         <p>Error: {error}</p>
+        <button onClick={fetchJobs}>Retry Fetching</button>
       </div>
     );
   }
 
+  // Main render
   return (
     <div className={styles.container}>
       <Head>
@@ -191,184 +189,34 @@ export default function Home() {
         <meta name="description" content="Discover Exciting AI Jobs" />
       </Head>
 
-      <div className={styles.pageLayout}>
-        {/* Sidebar Filters */}
-        <aside className={styles.filterSidebar}>
-          <div className={styles.filterScrollContainer}>
-            {/* Locations Filter */}
-            <div className={styles.filterSection}>
-              <h3>Locations</h3>
-              {filters.locations.map(location => (
-                <label key={location} className={styles.filterCheckbox}>
-                  <input
-                    type="checkbox"
-                    checked={selectedFilters.locations.includes(location)}
-                    onChange={() => handleFilterChange('locations', location)}
-                  />
-                  {location}
-                </label>
-              ))}
-            </div>
+      <header>
+        <h1>AI Job Opportunities</h1>
+        <input 
+          type="text"
+          placeholder="Search jobs"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </header>
 
-            {/* Companies Filter */}
-            <div className={styles.filterSection}>
-              <h3>Companies</h3>
-              {filters.companies.map(company => (
-                <label key={company} className={styles.filterCheckbox}>
-                  <input
-                    type="checkbox"
-                    checked={selectedFilters.companies.includes(company)}
-                    onChange={() => handleFilterChange('companies', company)}
-                  />
-                  {company}
-                </label>
-              ))}
-            </div>
-
-            {/* Departments Filter */}
-            <div className={styles.filterSection}>
-              <h3>Departments</h3>
-              {filters.departments.map(department => (
-                <label key={department} className={styles.filterCheckbox}>
-                  <input
-                    type="checkbox"
-                    checked={selectedFilters.departments.includes(department)}
-                    onChange={() => handleFilterChange('departments', department)}
-                  />
-                  {department}
-                </label>
-              ))}
-            </div>
-
-            {/* Employment Type Filter */}
-            <div className={styles.filterSection}>
-              <h3>Employment Type</h3>
-              {filters.employmentTypes.map(type => (
-                <label key={type} className={styles.filterCheckbox}>
-                  <input
-                    type="checkbox"
-                    checked={selectedFilters.employmentTypes.includes(type)}
-                    onChange={() => handleFilterChange('employmentTypes', type)}
-                  />
-                  {type}
-                </label>
-              ))}
-            </div>
-
-            {/* Remote Status Filter */}
-            <div className={styles.filterSection}>
-              <h3>Work Type</h3>
-              {filters.remoteStatus.map(status => (
-                <label key={status} className={styles.filterCheckbox}>
-                  <input
-                    type="checkbox"
-                    checked={selectedFilters.remoteStatus.includes(status)}
-                    onChange={() => handleFilterChange('remoteStatus', status)}
-                  />
-                  {status}
-                </label>
-              ))}
-            </div>
-
-            {/* Salary Range Filter */}
-            <div className={styles.filterSection}>
-              <h3>Salary Range</h3>
-              {filters.salaryRanges.map(range => (
-                <label key={range.label} className={styles.filterCheckbox}>
-                  <input
-                    type="checkbox"
-                    checked={selectedFilters.salaryRanges.some(r => r.label === range.label)}
-                    onChange={() => handleFilterChange('salaryRanges', range)}
-                  />
-                  {range.label}
-                </label>
-              ))}
-            </div>
-
-            {/* Reset Filters Button */}
-            <button 
-              className={styles.resetFiltersButton}
-              onClick={resetFilters}
-            >
-              Reset Filters
-            </button>
+      <main>
+        {visibleJobs.map((job, index) => (
+          <div key={index}>
+            <h2>{job.title}</h2>
+            <p>Company: {job.company}</p>
+            <p>Location: {job.location}</p>
+            <p>Department: {job.department}</p>
+            <p>Salary: {formatSalaryRange(job)}</p>
+            <a href={job.applyUrl} target="_blank" rel="noopener noreferrer">
+              Apply Now
+            </a>
           </div>
-        </aside>
+        ))}
+      </main>
 
-        {/* Main Content */}
-        <div className={styles.mainContent}>
-          <header className={styles.header}>
-            <h1>AI Job Opportunities</h1>
-            <div className={styles.searchContainer}>
-              <input 
-                type="text" 
-                placeholder="Search jobs by title, location, company, or department" 
-                className={styles.searchInput}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </header>
-
-          <main className={styles.jobGrid}>
-            {filteredJobs.slice(0, page * jobsPerPage).map((job, index) => (
-              <div key={index} className={styles.jobCard}>
-                <h2 className={styles.jobTitle}>{job.title}</h2>
-                <div className={styles.jobDetails}>
-                  {job.company && (
-                    <p className={styles.jobCompany}>
-                      🏢 {job.company}
-                    </p>
-                  )}
-                  {job.location && (
-                    <p className={styles.jobLocation}>
-                      📍 {job.location}
-                    </p>
-                  )}
-                  {job.department && (
-                    <p className={styles.jobDepartment}>
-                      📋 {job.department}
-                    </p>
-                  )}
-                  {job.isRemote !== undefined && (
-                    <p className={styles.jobRemote}>
-                      {job.isRemote ? '🌐 Remote' : '🏠 On-site'}
-                    </p>
-                  )}
-                  {job.salaryInfo && (
-                    <p className={styles.jobSalary}>
-                      💰 {formatSalaryRange(job)}
-                    </p>
-                  )}
-                </div>
-                <a 
-                  href={fixApplyUrl(job.applyUrl)} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className={styles.applyButton}
-                >
-                  View Job Details
-                </a>
-              </div>
-            ))}
-          </main>
-
-          {filteredJobs.length > page * jobsPerPage && (
-            <div className={styles.loadMoreContainer}>
-              <button 
-                onClick={() => setPage(prev => prev + 1)}
-                className={styles.loadMoreButton}
-              >
-                Load More Jobs
-              </button>
-            </div>
-          )}
-
-          <footer className={styles.footer}>
-            <p>© {new Date().getFullYear()} AI Job Opportunities</p>
-          </footer>
-        </div>
-      </div>
+      {filteredJobs.length > visibleJobs.length && (
+        <button onClick={loadMoreJobs}>Load More</button>
+      )}
     </div>
   );
 }
