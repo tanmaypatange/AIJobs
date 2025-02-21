@@ -1,16 +1,23 @@
-# AI Job Listings
+# AI Job Opportunities
 
-A simple Next.js application to display current job openings at OpenAI.
+A modern web application to browse AI job listings with dark/light mode support.
 
 ## Features
-- Fetches real-time job listings
-- Simple, clean interface
-- Direct application links
+- Real-time job listings from OpenAI
+- Dark and Light mode toggle
+- Responsive design
+- Pagination with "Load More" functionality
 
-## How to Run
+## Technologies
+- Next.js
+- React
+- Ashby Jobs API
+
+## Getting Started
 1. Clone the repository
-2. Run `npm install`
-3. Run `npm run dev`
+2. Install dependencies: `npm install`
+3. Run development server: `npm run dev`
+4. Build for production: `npm run build`
 
 ## Deployment
-Deployed on Vercel
+Easily deployable on Vercel or other Next.js compatible platforms.
