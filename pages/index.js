@@ -12,7 +12,7 @@ export default function Home() {
 
   // Theme toggle effect
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    document.body.classList.toggle(styles.darkTheme, theme === 'dark');
   }, [theme]);
 
   const toggleTheme = () => {
@@ -61,14 +61,14 @@ export default function Home() {
 
   if (error) {
     return (
-      <div className={styles.container}>
+      <div className={`${styles.container} ${styles.root}`}>
         <p>Error: {error}</p>
       </div>
     );
   }
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${styles.root}`}>
       <Head>
         <title>AI Job Opportunities</title>
         <meta name="description" content="Discover Exciting AI Jobs" />
