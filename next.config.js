@@ -5,9 +5,13 @@ const nextConfig = {
     return [
       {
         source: '/api/jobs',
-        destination: 'https://api.ashbyhq.com/posting-api/job-board/openai?includeCompensation=false'
+        destination: 'https://api.ashbyhq.com/posting-api/job-board/openai?includeCompensation=true'
       }
     ];
+  },
+  // Add this to handle potential fetch issues
+  experimental: {
+    serverActions: true
   }
 };
 
