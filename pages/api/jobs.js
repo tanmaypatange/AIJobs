@@ -32,15 +32,10 @@ export default async function handler(req, res) {
       title: job.title || 'Untitled Position',
       location: job.location || 'Location Not Specified',
       department: job.department || 'Department Not Specified',
-      company: job.company || 'OpenAI',
+      company: 'OpenAI',
       applyUrl: job.applyUrl || '',
       isRemote: job.isRemote || false,
-      employmentType: job.employmentType || 'Not Specified',
-      compensation: job.compensation ? {
-        minValue: job.compensation.summaryComponents?.find(c => c.compensationType === 'Salary')?.minValue || 0,
-        maxValue: job.compensation.summaryComponents?.find(c => c.compensationType === 'Salary')?.maxValue || 0,
-        currencyCode: job.compensation.summaryComponents?.find(c => c.compensationType === 'Salary')?.currencyCode || 'USD'
-      } : null
+      compensation: job.compensation || null
     }));
 
     res.status(200).json({ jobs: sanitizedJobs });
