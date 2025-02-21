@@ -9,16 +9,18 @@ export default function Home() {
   const [filters, setFilters] = useState({
     locations: [],
     departments: [],
+    companies: [],
     employmentTypes: [],
     remoteStatus: [],
-    salaryRange: null
+    salaryRanges: []
   });
   const [selectedFilters, setSelectedFilters] = useState({
     locations: [],
     departments: [],
+    companies: [],
     employmentTypes: [],
     remoteStatus: [],
-    salaryRange: null
+    salaryRanges: []
   });
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
@@ -36,18 +38,25 @@ export default function Home() {
         // Prepare filter options
         const uniqueLocations = [...new Set(fetchedJobs.map(job => job.location))];
         const uniqueDepartments = [...new Set(fetchedJobs.map(job => job.department))];
+        const uniqueCompanies = [...new Set(fetchedJobs.map(job => job.company))];
         const uniqueEmploymentTypes = [...new Set(fetchedJobs.map(job => job.employmentType))];
         const remoteOptions = [...new Set(fetchedJobs.map(job => job.isRemote ? 'Remote' : 'On-site'))];
+        
+        // Prepare salary ranges
+        const salaryRanges = [
+          { label: 'Under $50K', min: 0, max: 50000 },
+          { label: '$50K - $100K', min: 50000, max: 100000 },
+          { label: '$100K - $150K', min: 100000, max: 150000 },
+          { label: 'Over $150K', min: 150000, max: Infinity }
+        ];
 
         setFilters({
           locations: uniqueLocations,
           departments: uniqueDepartments,
+          companies: uniqueCompanies,
           employmentTypes: uniqueEmploymentTypes,
           remoteStatus: remoteOptions,
-          salaryRange: {
-            min: Math.min(...fetchedJobs.map(job => job.compensation?.minValue || 0)),
-            max: Math.max(...fetchedJobs.map(job => job.compensation?.maxValue || 1000000))
-          }
+          salaryRanges: salaryRanges
         });
 
         setVisibleJobs(fetchedJobs.slice(0, jobsPerPage));
@@ -69,13 +78,17 @@ export default function Home() {
       const matchesSearch = searchTerm === '' || 
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.department.toLowerCase().includes(searchTerm.toLowerCase());
+        job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.company.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesLocations = selectedFilters.locations.length === 0 || 
         selectedFilters.locations.includes(job.location);
 
       const matchesDepartments = selectedFilters.departments.length === 0 || 
         selectedFilters.departments.includes(job.department);
+
+      const matchesCompanies = selectedFilters.companies.length === 0 || 
+        selectedFilters.companies.includes(job.company);
 
       const matchesEmploymentTypes = selectedFilters.employmentTypes.length === 0 || 
         selectedFilters.employmentTypes.includes(job.employmentType);
@@ -84,11 +97,20 @@ export default function Home() {
         (selectedFilters.remoteStatus.includes('Remote') && job.isRemote) ||
         (selectedFilters.remoteStatus.includes('On-site') && !job.isRemote);
 
+      const matchesSalaryRange = selectedFilters.salaryRanges.length === 0 || 
+        selectedFilters.salaryRanges.some(range => 
+          job.compensation && 
+          job.compensation.minValue >= range.min && 
+          job.compensation.maxValue <= range.max
+        );
+
       return matchesSearch && 
              matchesLocations && 
              matchesDepartments && 
+             matchesCompanies &&
              matchesEmploymentTypes && 
-             matchesRemoteStatus;
+             matchesRemoteStatus &&
+             matchesSalaryRange;
     });
   }, [jobs, searchTerm, selectedFilters]);
 
@@ -110,15 +132,22 @@ export default function Home() {
     setSelectedFilters({
       locations: [],
       departments: [],
+      companies: [],
       employmentTypes: [],
       remoteStatus: [],
-      salaryRange: null
+      salaryRanges: []
     });
     setSearchTerm('');
   };
 
   const fixApplyUrl = (url) => {
     return url.replace(/\/application$/, '');
+  };
+
+  // Format salary range
+  const formatSalaryRange = (compensation) => {
+    if (!compensation || !compensation.minValue || !compensation.maxValue) return 'Salary not disclosed';
+    return `$${compensation.minValue.toLocaleString()} - $${compensation.maxValue.toLocaleString()}`;
   };
 
   if (error) {
@@ -139,68 +168,98 @@ export default function Home() {
       <div className={styles.pageLayout}>
         {/* Sidebar Filters */}
         <aside className={styles.filterSidebar}>
-          <div className={styles.filterSection}>
-            <h3>Locations</h3>
-            {filters.locations.map(location => (
-              <label key={location} className={styles.filterCheckbox}>
-                <input
-                  type="checkbox"
-                  checked={selectedFilters.locations.includes(location)}
-                  onChange={() => handleFilterChange('locations', location)}
-                />
-                {location}
-              </label>
-            ))}
-          </div>
+          <div className={styles.filterScrollContainer}>
+            <div className={styles.filterSection}>
+              <h3>Locations</h3>
+              {filters.locations.map(location => (
+                <label key={location} className={styles.filterCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.locations.includes(location)}
+                    onChange={() => handleFilterChange('locations', location)}
+                  />
+                  {location}
+                </label>
+              ))}
+            </div>
 
-          <div className={styles.filterSection}>
-            <h3>Departments</h3>
-            {filters.departments.map(department => (
-              <label key={department} className={styles.filterCheckbox}>
-                <input
-                  type="checkbox"
-                  checked={selectedFilters.departments.includes(department)}
-                  onChange={() => handleFilterChange('departments', department)}
-                />
-                {department}
-              </label>
-            ))}
-          </div>
+            <div className={styles.filterSection}>
+              <h3>Companies</h3>
+              {filters.companies.map(company => (
+                <label key={company} className={styles.filterCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.companies.includes(company)}
+                    onChange={() => handleFilterChange('companies', company)}
+                  />
+                  {company}
+                </label>
+              ))}
+            </div>
 
-          <div className={styles.filterSection}>
-            <h3>Employment Type</h3>
-            {filters.employmentTypes.map(type => (
-              <label key={type} className={styles.filterCheckbox}>
-                <input
-                  type="checkbox"
-                  checked={selectedFilters.employmentTypes.includes(type)}
-                  onChange={() => handleFilterChange('employmentTypes', type)}
-                />
-                {type}
-              </label>
-            ))}
-          </div>
+            <div className={styles.filterSection}>
+              <h3>Departments</h3>
+              {filters.departments.map(department => (
+                <label key={department} className={styles.filterCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.departments.includes(department)}
+                    onChange={() => handleFilterChange('departments', department)}
+                  />
+                  {department}
+                </label>
+              ))}
+            </div>
 
-          <div className={styles.filterSection}>
-            <h3>Work Type</h3>
-            {filters.remoteStatus.map(status => (
-              <label key={status} className={styles.filterCheckbox}>
-                <input
-                  type="checkbox"
-                  checked={selectedFilters.remoteStatus.includes(status)}
-                  onChange={() => handleFilterChange('remoteStatus', status)}
-                />
-                {status}
-              </label>
-            ))}
-          </div>
+            <div className={styles.filterSection}>
+              <h3>Employment Type</h3>
+              {filters.employmentTypes.map(type => (
+                <label key={type} className={styles.filterCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.employmentTypes.includes(type)}
+                    onChange={() => handleFilterChange('employmentTypes', type)}
+                  />
+                  {type}
+                </label>
+              ))}
+            </div>
 
-          <button 
-            className={styles.resetFiltersButton}
-            onClick={resetFilters}
-          >
-            Reset Filters
-          </button>
+            <div className={styles.filterSection}>
+              <h3>Work Type</h3>
+              {filters.remoteStatus.map(status => (
+                <label key={status} className={styles.filterCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.remoteStatus.includes(status)}
+                    onChange={() => handleFilterChange('remoteStatus', status)}
+                  />
+                  {status}
+                </label>
+              ))}
+            </div>
+
+            <div className={styles.filterSection}>
+              <h3>Salary Range</h3>
+              {filters.salaryRanges.map(range => (
+                <label key={range.label} className={styles.filterCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.salaryRanges.some(r => r.label === range.label)}
+                    onChange={() => handleFilterChange('salaryRanges', range)}
+                  />
+                  {range.label}
+                </label>
+              ))}
+            </div>
+
+            <button 
+              className={styles.resetFiltersButton}
+              onClick={resetFilters}
+            >
+              Reset Filters
+            </button>
+          </div>
         </aside>
 
         {/* Main Content */}
@@ -210,7 +269,7 @@ export default function Home() {
             <div className={styles.searchContainer}>
               <input 
                 type="text" 
-                placeholder="Search jobs by title, location, or department" 
+                placeholder="Search jobs by title, location, company, or department" 
                 className={styles.searchInput}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -223,6 +282,11 @@ export default function Home() {
               <div key={index} className={styles.jobCard}>
                 <h2 className={styles.jobTitle}>{job.title}</h2>
                 <div className={styles.jobDetails}>
+                  {job.company && (
+                    <p className={styles.jobCompany}>
+                      🏢 {job.company}
+                    </p>
+                  )}
                   {job.location && (
                     <p className={styles.jobLocation}>
                       📍 {job.location}
@@ -230,12 +294,17 @@ export default function Home() {
                   )}
                   {job.department && (
                     <p className={styles.jobDepartment}>
-                      🏢 {job.department}
+                      📋 {job.department}
                     </p>
                   )}
                   {job.isRemote !== undefined && (
                     <p className={styles.jobRemote}>
-                      {job.isRemote ? '🌐 Remote' : '🏢 On-site'}
+                      {job.isRemote ? '🌐 Remote' : '🏠 On-site'}
+                    </p>
+                  )}
+                  {job.compensation && (
+                    <p className={styles.jobSalary}>
+                      💰 {formatSalaryRange(job.compensation)}
                     </p>
                   )}
                 </div>
