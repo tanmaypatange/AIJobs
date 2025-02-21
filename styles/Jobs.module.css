@@ -1,45 +1,86 @@
+:root {
+  --background-primary: #ffffff;
+  --background-secondary: #f4f4f4;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --accent-color: #007aff;
+  --accent-hover: #0056b3;
+  --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  --border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --background-primary: #1a1a1a;
+  --background-secondary: #252525;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --accent-color: #0a84ff;
+  --accent-hover: #458eff;
+  --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  --border-color: rgba(255, 255, 255, 0.1);
+}
+
 .container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 20px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  padding: 40px 20px;
+  background-color: var(--background-secondary);
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'San Francisco', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.themeToggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--background-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--card-shadow);
 }
 
 .header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 50px;
 }
 
 .header h1 {
-  font-size: 2.5rem;
-  color: #333;
-  font-weight: 600;
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -1px;
 }
 
 .jobGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
 }
 
 .jobCard {
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 20px;
-  transition: all 0.3s ease;
+  background-color: var(--background-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 15px;
+  padding: 25px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   flex-direction: column;
+  box-shadow: var(--card-shadow);
 }
 
 .jobCard:hover {
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transform: translateY(-5px);
+  transform: translateY(-10px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
 .jobTitle {
-  font-size: 1.2rem;
-  color: #2c3e50;
+  font-size: 1.4rem;
+  color: var(--text-primary);
   margin-bottom: 15px;
   font-weight: 600;
 }
@@ -53,78 +94,58 @@
 .jobDepartment {
   display: flex;
   align-items: center;
-  color: #7f8c8d;
+  color: var(--text-secondary);
   margin-bottom: 10px;
 }
 
-.jobLocation span,
-.jobDepartment span {
-  margin-right: 10px;
-  font-size: 1.2rem;
-}
-
 .applyButton {
-  background-color: #3498db;
+  background-color: var(--accent-color);
   color: white;
   text-align: center;
-  padding: 10px 15px;
-  border-radius: 5px;
+  padding: 12px 20px;
+  border-radius: 10px;
   text-decoration: none;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
   margin-top: auto;
+  font-weight: 500;
 }
 
 .applyButton:hover {
-  background-color: #2980b9;
+  background-color: var(--accent-hover);
+  transform: scale(1.02);
 }
 
 .loadMoreContainer {
   display: flex;
   justify-content: center;
-  margin-top: 30px;
+  margin-top: 40px;
 }
 
 .loadMoreButton {
-  background-color: #2ecc71;
+  background-color: var(--accent-color);
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
+  padding: 12px 24px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
+  font-weight: 500;
 }
 
 .loadMoreButton:hover {
-  background-color: #27ae60;
+  background-color: var(--accent-hover);
+  transform: scale(1.05);
 }
 
 .footer {
   text-align: center;
-  margin-top: 40px;
-  color: #7f8c8d;
+  margin-top: 50px;
+  color: var(--text-secondary);
   padding: 20px 0;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border-color);
 }
 
-.errorContainer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  color: #e74c3c;
-  text-align: center;
-}
-
-/* Responsive Adjustments */
 @media (max-width: 768px) {
-  .container {
-    padding: 10px;
-  }
-
-  .header h1 {
-    font-size: 2rem;
-  }
-
   .jobGrid {
     grid-template-columns: 1fr;
   }
