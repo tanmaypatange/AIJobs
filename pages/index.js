@@ -5,10 +5,19 @@ import styles from '../styles/Jobs.module.css';
 export default function Home() {
   const [jobs, setJobs] = useState([]);
   const [visibleJobs, setVisibleJobs] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [theme, setTheme] = useState('light');
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const jobsPerPage = 6;
+
+  // Theme toggle effect
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -18,8 +27,6 @@ export default function Home() {
       if (response.ok) {
         const fetchedJobs = Array.isArray(data.jobs) ? data.jobs : [];
         setJobs(fetchedJobs);
-        
-        // Initially load first set of jobs
         setVisibleJobs(fetchedJobs.slice(0, jobsPerPage));
       } else {
         throw new Error(data.error || 'Failed to fetch jobs');
@@ -27,8 +34,6 @@ export default function Home() {
     } catch (err) {
       console.error('Fetching jobs failed:', err);
       setError(err.message);
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -56,7 +61,7 @@ export default function Home() {
 
   if (error) {
     return (
-      <div className={styles.errorContainer}>
+      <div className={styles.container}>
         <p>Error: {error}</p>
       </div>
     );
@@ -69,6 +74,13 @@ export default function Home() {
         <meta name="description" content="Discover Exciting AI Jobs" />
       </Head>
 
+      <button 
+        className={styles.themeToggle} 
+        onClick={toggleTheme}
+      >
+        {theme === 'light' ? '🌙' : '☀️'}
+      </button>
+
       <header className={styles.header}>
         <h1>AI Job Opportunities</h1>
       </header>
@@ -80,12 +92,12 @@ export default function Home() {
             <div className={styles.jobDetails}>
               {job.location && (
                 <p className={styles.jobLocation}>
-                  <span>📍</span> {job.location}
+                  📍 {job.location}
                 </p>
               )}
               {job.department && (
                 <p className={styles.jobDepartment}>
-                  <span>🏢</span> {job.department}
+                  🏢 {job.department}
                 </p>
               )}
             </div>
