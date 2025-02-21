@@ -1,10 +1,61 @@
 .container {
-  max-width: 1280px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 40px 20px;
   background-color: white;
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, 'San Francisco', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.pageLayout {
+  display: flex;
+}
+
+.filterSidebar {
+  width: 250px;
+  padding-right: 30px;
+  border-right: 1px solid #e0e0e0;
+}
+
+.filterSection {
+  margin-bottom: 20px;
+}
+
+.filterSection h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.filterCheckbox {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.filterCheckbox input {
+  margin-right: 10px;
+}
+
+.resetFiltersButton {
+  width: 100%;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.resetFiltersButton:hover {
+  background-color: #e0e0e0;
+}
+
+.mainContent {
+  flex-grow: 1;
+  padding-left: 30px;
 }
 
 .header {
@@ -75,7 +126,8 @@
 }
 
 .jobLocation, 
-.jobDepartment {
+.jobDepartment,
+.jobRemote {
   display: flex;
   align-items: center;
   color: #666;
@@ -83,7 +135,8 @@
 }
 
 .jobLocation span,
-.jobDepartment span {
+.jobDepartment span,
+.jobRemote span {
   margin-right: 10px;
   font-size: 1.2rem;
 }
@@ -135,16 +188,24 @@
   border-top: 1px solid #e0e0e0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 992px) {
+  .pageLayout {
+    flex-direction: column;
+  }
+
+  .filterSidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    padding-right: 0;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+  }
+
+  .mainContent {
+    padding-left: 0;
+  }
+
   .jobGrid {
     grid-template-columns: 1fr;
   }
-
-  .header h1 {
-    font-size: 2.5rem;
-  }
-
-  .searchContainer {
-    padding: 0 10px;
-  }
-}
