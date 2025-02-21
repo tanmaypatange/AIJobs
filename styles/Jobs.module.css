@@ -15,6 +15,15 @@
   width: 250px;
   padding-right: 30px;
   border-right: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.filterScrollContainer {
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 15px;
 }
 
 .filterSection {
@@ -26,6 +35,11 @@
   font-weight: 600;
   margin-bottom: 10px;
   color: #333;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 10;
+  padding-bottom: 5px;
 }
 
 .filterCheckbox {
@@ -125,18 +139,22 @@
   flex-grow: 1;
 }
 
+.jobCompany,
 .jobLocation, 
 .jobDepartment,
-.jobRemote {
+.jobRemote,
+.jobSalary {
   display: flex;
   align-items: center;
   color: #666;
   margin-bottom: 10px;
 }
 
+.jobCompany span,
 .jobLocation span,
 .jobDepartment span,
-.jobRemote span {
+.jobRemote span,
+.jobSalary span {
   margin-right: 10px;
   font-size: 1.2rem;
 }
@@ -200,6 +218,14 @@
     padding-right: 0;
     padding-bottom: 20px;
     margin-bottom: 20px;
+    height: auto;
+    position: static;
+  }
+
+  .filterScrollContainer {
+    height: auto;
+    overflow-y: visible;
+    padding-right: 0;
   }
 
   .mainContent {
@@ -226,6 +252,10 @@
 
   .filterSection h3 {
     width: 100%;
+    position: static;
+    background-color: transparent;
+    z-index: auto;
+    padding-bottom: 0;
   }
 
   .filterCheckbox {
